@@ -78,36 +78,37 @@ jobs:
           # Newer macOSs don't have the right LLVM to compile our dependencies
           - os: macOS-latest
             ghc: "9.0.2"
-
-        # Uncomment if testing with an unreleased GHC. Make sure to edit the
-        #  "Setup Haskell (head)" step too.
-        # include:
-        #   - os: ubuntu-24.04
-        #     ghc: head
+        include:
+          # Pre-release GHCs. These are kept out of ghc-versions.json, as they
+          # need unreleased dependencies. See cabal.project.ghc-prerelease.
+          - os: ubuntu-24.04
+            ghc: 10.0.0.20260917
+            prerelease: true
       fail-fast: false
+
+    # Pre-release GHCs and their dependencies are moving targets, so don't let
+    # them fail the workflow.
+    continue-on-error: ${{ matrix.prerelease == true }}
+
     steps:
       - name: Checkout
         uses: actions/checkout@v7
 
+      # Pre-release GHCs are available, as haskell-actions/setup enables
+      # ghcup's prereleases channel by default.
       - name: Setup Haskell
-        if: matrix.ghc != 'head'
         uses: haskell-actions/setup@v2.12.1
         id: setup-haskell
         with:
           ghc-version: ${{ matrix.ghc }}
           cabal-version: 3.16.1.0
 
-      - name: Setup Haskell (head)
-        if: matrix.ghc == 'head'
-        id: setup-haskell-head
+      # Copied rather than linked, as the next step appends to the root one
+      - name: Use pre-release overlay
+        if: matrix.prerelease
         run: |
-          sudo apt-get update
-          sudo apt-get install -y build-essential curl libffi-dev libffi8ubuntu1 libgmp-dev libgmp10 libncurses-dev libncurses5 libtinfo5
-          curl --proto '=https' --tlsv1.2 -sSf https://get-ghcup.haskell.org | sh
-          ghcup config add-release-channel https://raw.githubusercontent.com/haskell/ghcup-metadata/master/ghcup-prereleases-0.0.8.yaml
-          ghcup install ghc 9.10.0.20240328
-          ghcup set ghc 9.10.0.20240328
-          echo "cabal-store=$HOME/.cabal/store" >> $GITHUB_OUTPUT
+          cp cabal.project.ghc-prerelease cabal.project.local
+          cp cabal.project.ghc-prerelease example/cabal.project.local
 
       - name: Enable -Werror
         run: |
@@ -122,7 +123,7 @@ jobs:
       - name: Cache dependencies
         uses: actions/cache@v6
         with:
-          path: ${{ steps.setup-haskell.outputs.cabal-store || steps.setup-haskell-head.outputs.cabal-store }}
+          path: ${{ steps.setup-haskell.outputs.cabal-store }}
           key: ${{ runner.os }}-ghc-${{ matrix.ghc }}-${{ hashFiles('frozen') }}
           restore-keys: |
             ${{ runner.os }}-ghc-${{ matrix.ghc }}-${{ hashFiles('frozen') }}
