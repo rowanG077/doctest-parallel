@@ -21,16 +21,16 @@ jobs:
       fail-fast: false
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Setup Haskell
-        uses: haskell-actions/setup@v2.8.0
+        uses: haskell-actions/setup@v2.12.1
         id: setup-haskell
         with:
           enable-stack: true
 
       - name: Cache dependencies
-        uses: actions/cache@v4
+        uses: actions/cache@v6
         with:
           path: ${{ steps.setup-haskell.outputs.stack-root }}/snapshots
           key: ${{ runner.os }}-ghc-${{ matrix.resolver }}-${{ hashFiles('doctest-parallel.cabal') }}
@@ -61,7 +61,7 @@ jobs:
     outputs:
       matrix: ${{ steps.set-matrix.outputs.matrix }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - id: set-matrix
         run: echo "matrix=$(jq -c '.' ghc-versions.json)" >> $GITHUB_OUTPUT
 
@@ -87,11 +87,11 @@ jobs:
       fail-fast: false
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Setup Haskell
         if: matrix.ghc != 'head'
-        uses: haskell-actions/setup@v2.8.0
+        uses: haskell-actions/setup@v2.12.1
         id: setup-haskell
         with:
           ghc-version: ${{ matrix.ghc }}
@@ -120,7 +120,7 @@ jobs:
           mv cabal.project.freeze frozen
 
       - name: Cache dependencies
-        uses: actions/cache@v4
+        uses: actions/cache@v6
         with:
           path: ${{ steps.setup-haskell.outputs.cabal-store || steps.setup-haskell-head.outputs.cabal-store }}
           key: ${{ runner.os }}-ghc-${{ matrix.ghc }}-${{ hashFiles('frozen') }}
@@ -151,7 +151,7 @@ jobs:
   nix:
     runs-on: ubuntu-24.04
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v7
     - uses: cachix/install-nix-action@v31
       with:
         nix_path: nixpkgs=channel:nixos-unstable
@@ -174,7 +174,7 @@ jobs:
           - {ghc: "9.10.2", cabal: "3.12.1.0", hls: "2.9.0.1", ghcup: "0.1.50.2"}
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Setup Haskell
         run: |
@@ -202,7 +202,7 @@ jobs:
           mv cabal.project.freeze frozen
 
       - name: Cache dependencies
-        uses: actions/cache@v4
+        uses: actions/cache@v6
         with:
           path: $HOME/.cabal/store
           key: ${{ runner.os }}-cachebust1-hls-${{ matrix.tools.ghc }}-${{ matrix.tools.cabal }}-${{ matrix.tools.hls }}-${{ matrix.tools.ghcup }}-${{ hashFiles('frozen') }}
@@ -233,7 +233,7 @@ jobs:
     runs-on: ubuntu-24.04
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Check dependencies for failures
         run: |
